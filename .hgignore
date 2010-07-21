@@ -1,0 +1,7 @@
+syntax: glob
+
+**.6
+_go_.6
+_obj
+6.out
+

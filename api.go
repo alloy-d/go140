@@ -58,6 +58,7 @@ type User struct {
 	Name string
 	Location string
 	Description string
+	URL string
 	Status *Status
 }
 

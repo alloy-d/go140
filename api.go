@@ -1,3 +1,4 @@
+/* Package go140 implements interaction with the Twitter API */
 package go140
 
 import (
@@ -13,10 +14,24 @@ type API struct {
 	oauth.OAuth
 }
 
-func (api *API) User(id string) (interface{}, os.Error) {
+type Status struct {
+	Date string "created_at"
+	Text string
+	Location string "place"
+}
+
+type User struct {
+	ScreenName string "screen_name"
+	Name string
+	Location string
+	Description string
+	Status *Status
+}
+
+func (api *API) UserByID(id uint) (*User, os.Error) {
 	url := api.Root + "/1/users/show.json"
 	params := map[string]string{
-		"id": id,
+		"id": fmt.Sprintf("%d", id),
 	}
 
 	resp, err := api.Get(url, params)
@@ -29,28 +44,21 @@ func (api *API) User(id string) (interface{}, os.Error) {
 		return nil, err
 	}
 
-	var obj interface{} = nil
-	err = json.Unmarshal(data, &obj)
+	var user User
+	err = json.Unmarshal(data, &user)
 	if err != nil {
 		return nil, err
 	}
-	return obj, nil
+	return &user, nil
 }
 
-func (api *API) Status() (string, os.Error) {
-	user, err := api.User(fmt.Sprintf("%d", api.UserID()))
+func (api *API) Status() (*Status, os.Error) {
+	user, err := api.UserByID(api.UserID())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	userMap := user.(map[string]interface{})
-	if status, ok := userMap["status"]; ok {
-		statusMap := status.(map[string]interface{})
-		if text, ok := statusMap["text"]; ok {
-			return text.(string), nil
-		}
-	}
-	return "", nil
+	return user.Status, nil
 }
 
 func (api *API) Update(s string) (string, os.Error) {

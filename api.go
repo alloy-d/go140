@@ -48,13 +48,13 @@ func (api *API) Get(resource string, params map[string]string) (*http.Response, 
 }
 
 type Status struct {
-	Date string "created_at"
+	Date string "json:\"created_at\""
 	Text string
-	Location string "place"
+	//Location string "json:\"place\""
 }
 
 type User struct {
-	ScreenName string "screen_name"
+	ScreenName string "json:\"screen_name\""
 	Name string
 	Location string
 	Description string

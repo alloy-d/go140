@@ -4,14 +4,47 @@ package go140
 import (
 	"github.com/alloy-d/goauth"
 	"fmt"
+	"http"
 	"io/ioutil"
 	"json"
 	"os"
+	"url"
 )
 
 type API struct {
 	Root string
 	oauth.OAuth
+}
+
+// TODO: this is SILLY.
+func addQueryParams(resource string, params map[string]string) string {
+	str := resource
+
+	first := true
+	for k, v := range params {
+		if first {
+			str += "?"
+			first = false
+		} else {
+			str += "&"
+		}
+
+		rawv, err := url.QueryUnescape(v)
+		if err == nil {
+			v = rawv
+		}
+		str += k + "=" + url.QueryEscape(v)
+	}
+	return str
+}
+
+func (api *API) Get(resource string, params map[string]string) (*http.Response, os.Error) {
+	if api.Authorized() {
+		return api.OAuth.Get(resource, params)
+	}
+
+	fullURL := addQueryParams(resource, params)
+	return http.Get(fullURL)
 }
 
 type Status struct {
@@ -29,10 +62,19 @@ type User struct {
 }
 
 func (api *API) UserByID(id uint) (*User, os.Error) {
-	url := api.Root + "/1/users/show.json"
-	params := map[string]string{
+	return api.user(map[string]string{
 		"id": fmt.Sprintf("%d", id),
-	}
+	})
+}
+
+func (api *API) User(screen_name string) (*User, os.Error) {
+	return api.user(map[string]string{
+		"screen_name": screen_name,
+	})
+}
+
+func (api *API) user(params map[string]string) (*User, os.Error) {
+	url := api.Root + "/1/users/show.json"
 
 	resp, err := api.Get(url, params)
 	if err != nil {
